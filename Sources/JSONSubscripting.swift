@@ -239,7 +239,11 @@ extension JSON {
         var json: JSON?
         do {
             json = try valueAtPath(path, detectNull: detectNull)
-            return try json.map(transform)
+            if json == .Null && detectNull {
+                return nil
+            } else {
+                return try json.map(transform)
+            }
         } catch Error.IndexOutOfBounds where detectNotFound {
             return nil
         } catch Error.KeyNotFound where detectNotFound {
