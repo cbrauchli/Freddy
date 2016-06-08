@@ -26,7 +26,7 @@ class JSONSubscriptingTests: XCTestCase {
             "residents": [
                 ["name": "Matt", "age": 33, "hasPet": false, "rent": .Null],
                 ["name": "Drew", "hasPet": true, "rent": 1234.5],
-                ["name": "Pat", "age": 28, "hasPet": .Null]
+                ["name": "Pat", "age": 28, "hasPet": .Null, "address": .Null]
             ]
             ])
         
@@ -78,7 +78,16 @@ class JSONSubscriptingTests: XCTestCase {
             XCTFail("There should be no error.")
         }
     }
-    
+
+    func testNullOptionsProducesOptionalForExplicitNil() {
+        do {
+            let residents = try residentJSON.arrayOf("residents", type: Resident.self)
+            XCTAssertNil(residents[2].address, "Pat's `address` should be nil.")
+        } catch {
+            XCTFail("There should be no error.")
+        }
+    }
+
     func testNullOptionsProducesOptionalForNullOrNotFound() {
         do {
             let residents = try residentJSON.arrayOf("residents", type: Resident.self)
@@ -158,7 +167,7 @@ class JSONSubscriptingTests: XCTestCase {
     
     func testDecodeOr() {
         do {
-            let outOfBounds = try residentJSON.decode("residents", 4, or: Resident(name: "NA", age: 30, hasPet: false, rent: 0))
+            let outOfBounds = try residentJSON.decode("residents", 4, or: Resident(name: "NA", age: 30, hasPet: false, rent: 0, address: nil))
             XCTAssertTrue(outOfBounds.name == "NA")
         } catch {
             XCTFail("There should be no error: \(error).")
@@ -214,7 +223,7 @@ class JSONSubscriptingTests: XCTestCase {
     
     func testArrayOfOr() {
         do {
-            let matt = Resident(name: "Matt", age: 32, hasPet: false, rent: 500.00)
+            let matt = Resident(name: "Matt", age: 32, hasPet: false, rent: 500.00, address: nil)
             let residentsOr = try residentJSON.arrayOf("residnts", or: [matt])
             XCTAssertEqual(residentsOr.first!, matt, "`residents` should not be nil")
         } catch {
@@ -358,6 +367,7 @@ private struct Resident {
     let age: Int?
     let hasPet: Bool?
     let rent: Double?
+    let address: Address?
 }
 
 extension Resident: JSONDecodable {
@@ -366,6 +376,19 @@ extension Resident: JSONDecodable {
         age = try json.int("age", alongPath: .MissingKeyBecomesNil)
         hasPet = try json.bool("hasPet", alongPath: .NullBecomesNil)
         rent = try json.double("rent", alongPath: [.NullBecomesNil, .MissingKeyBecomesNil])
+        address = try json.decode("address", alongPath: [.NullBecomesNil, .MissingKeyBecomesNil])
+    }
+}
+
+public struct Address {
+    public let street: String
+    public let city: String
+}
+
+extension Address: JSONDecodable {
+    public init(json value: JSON) throws {
+        street = try value.string("address")
+        city = try value.string("city")
     }
 }
 
