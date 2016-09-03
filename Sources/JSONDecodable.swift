@@ -32,6 +32,12 @@ extension Double: JSONDecodable {
             self = double
         case let .Int(int):
             self = Swift.Double(int)
+        case let .String(str):
+            if let double = Swift.Double(str) {
+                self = double
+            } else {
+                throw JSON.Error.ValueNotConvertible(value: json, to: Swift.Double)
+            }
         default:
             throw JSON.Error.ValueNotConvertible(value: json, to: Swift.Double)
         }
