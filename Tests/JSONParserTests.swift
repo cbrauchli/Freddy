@@ -201,6 +201,7 @@ class JSONParserTests: XCTestCase {
             ("-123.45e-2", -123.45e-2),
             ("0.1e-1", 0.01),
             ("-0.1E-1", -0.01),
+            ("1472861857112", 1472861857112.0),
         ] {
             do {
                 let value = try JSONFromString(string).double()
