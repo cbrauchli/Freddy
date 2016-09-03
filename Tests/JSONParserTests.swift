@@ -179,7 +179,7 @@ class JSONParserTests: XCTestCase {
             ("-123.45e-2", -123.45e-2),
             ("0.1e-1", 0.01),
             ("-0.1E-1", -0.01),
-            ("1472861857112", 1472861857112.0),
+            ("1472861857112", 1472861857112),
         ] {
             do {
                 let value = try JSONFromString(string).double()
@@ -268,8 +268,27 @@ class JSONParserTests: XCTestCase {
 
         // The Freddy parser behaves consistently across architectures.
         XCTAssertEqual(try? json.int("exceedsIntMax"), nil, "as int")
-        XCTAssertEqual(try? json.double("exceedsIntMax"), nil, "as double")
+        XCTAssertEqual(try? json.double("exceedsIntMax"), Double(anyValueExceedingIntMax), "as double")
         XCTAssertEqual(try? json.string("exceedsIntMax"), anyValueExceedingIntMax.description, "as string")
+    }
+
+    // This test should also be run on the iPhone 5 simulator to check 32-bit support.
+    func testLargeIntResultsInStringOrIntWithFreddyParser() {
+        let largeValue = "1472861857112"
+        let expectedResult = Int(largeValue) // nil if on 32-bit, an Int otherwise
+
+        do {
+            let value = try JSONFromString("\(largeValue)").int()
+            XCTAssertEqual(value, Int(largeValue))
+            XCTAssertNotNil(expectedResult)
+        } catch JSON.Error.ValueNotConvertible {
+            // expected error - do nothing
+            XCTAssertNil(expectedResult)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(try? JSONFromString("\(largeValue)").string(), largeValue)
     }
 
     // This was tripping a fatalError with the Freddy parser for 64-bit at one point:
