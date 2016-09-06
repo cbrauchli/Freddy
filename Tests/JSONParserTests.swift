@@ -273,21 +273,38 @@ class JSONParserTests: XCTestCase {
     }
 
     // This test should also be run on the iPhone 5 simulator to check 32-bit support.
+    func testOverflowingInt32ResultsInIntWhenAppropriateWithFreddyParser() {
+        let anyValueExceedingInt32Max: Int64 = 4611686018427387901 // This is a 62-bit number that is not accurately representable as a double
+        let jsonString = "{\"exceedsInt32Max\": \(anyValueExceedingInt32Max)}"
+
+        let data = jsonString.dataUsingEncoding(NSUTF8StringEncoding)!
+        guard let json = try? JSON(data: data) else {
+            XCTFail("Failed to even parse JSON: \(jsonString)")
+            return
+        }
+
+        let expectedIntValue: Int64? = Int64(Int.max) > anyValueExceedingInt32Max ? anyValueExceedingInt32Max : nil
+        let actualIntValue: Int64?
+        do {
+            actualIntValue = try Int64(json.int("exceedsInt32Max"))
+        } catch {
+            actualIntValue = nil
+        }
+
+        // The Freddy parser behaves consistently across architectures.
+        XCTAssertEqual(actualIntValue, expectedIntValue, "as int")
+        XCTAssertEqual(try? json.double("exceedsInt32Max"), Double(anyValueExceedingInt32Max), "as double")
+        XCTAssertEqual(try? json.string("exceedsInt32Max"), anyValueExceedingInt32Max.description, "as string")
+        XCTAssertNotEqual(anyValueExceedingInt32Max, Int64(try! json.double("exceedsInt32Max")), "as double to int64")
+    }
+
+    // This test should also be run on the iPhone 5 simulator to check 32-bit support.
     func testLargeIntResultsInStringOrIntWithFreddyParser() {
         let largeValue = "1472861857112"
         let expectedResult = Int(largeValue) // nil if on 32-bit, an Int otherwise
 
-        do {
-            let value = try JSONFromString("\(largeValue)").int()
-            XCTAssertEqual(value, Int(largeValue))
-            XCTAssertNotNil(expectedResult)
-        } catch JSON.Error.ValueNotConvertible {
-            // expected error - do nothing
-            XCTAssertNil(expectedResult)
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-
+        let value = try? JSONFromString("\(largeValue)").int()
+        XCTAssertEqual(value, expectedResult)
         XCTAssertEqual(try? JSONFromString("\(largeValue)").string(), largeValue)
     }
 
