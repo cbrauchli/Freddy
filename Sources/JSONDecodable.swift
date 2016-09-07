@@ -32,11 +32,16 @@ extension Double: JSONDecodable {
             self = double
         case let .Int(int):
             self = Swift.Double(int)
+        case let .String(str):
+            if let double = Swift.Double(str) {
+                self = double
+            } else {
+                throw JSON.Error.ValueNotConvertible(value: json, to: Swift.Double)
+            }
         default:
             throw JSON.Error.ValueNotConvertible(value: json, to: Swift.Double)
         }
     }
-    
 }
 
 extension Int: JSONDecodable {
@@ -67,10 +72,18 @@ extension String: JSONDecodable {
     ///           an instance of `String` cannot be created from the `JSON` value that was
     ///           passed to this initializer.
     public init(json: JSON) throws {
-        guard case let .String(string) = json else {
+        switch json {
+        case let .String(string):
+            self = string
+        case let .Int(int):
+            self = String(int)
+        case let .Bool(bool):
+            self = String(bool)
+        case let .Double(double):
+            self = String(double)
+        default:
             throw JSON.Error.ValueNotConvertible(value: json, to: Swift.String)
         }
-        self = string
     }
     
 }
