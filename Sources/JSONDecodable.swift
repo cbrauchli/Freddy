@@ -72,7 +72,6 @@ extension String: JSONDecodable {
     ///           an instance of `String` cannot be created from the `JSON` value that was
     ///           passed to this initializer.
     public init(json: JSON) throws {
-        
         switch json {
         case let .String(string):
             self = string
