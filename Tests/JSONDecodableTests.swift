@@ -95,10 +95,10 @@ class JSONDecodableTests: XCTestCase {
         }
         
         do {
-            _ = try String(json: 4)
-            XCTFail("Should not be able to instantiate `String` with `Int` `JSON`.")
+            let four = try String(json: 4)
+            XCTAssertEqual(four, "4", "`four` and `4` should be equal.")
         } catch JSON.Error.ValueNotConvertible(let type) {
-            XCTAssert(true, "\(type) should not be covertible from 'bad' `Int.")
+            XCTFail("\(type) should be covertible from `Int.")
         } catch {
             XCTFail("Failed for unknown reason: \(error).")
         }
